@@ -1,6 +1,9 @@
 use std::process::exit;
 
 use clap::Clap;
+use std::path::PathBuf;
+use std::env::current_dir;
+use kvs::{Result, KvsError, KvStore};
 
 #[derive(Clap)]
 #[clap(name = env!("CARGO_PKG_NAME"),version = env!("CARGO_PKG_VERSION"), author = env!("CARGO_PKG_AUTHORS"), about = env!("CARGO_PKG_DESCRIPTION"))]
@@ -42,20 +45,35 @@ struct Set {
 }
 
 
-fn main() {
+fn main() -> Result<()> {
     let opts: Opts = Opts::parse();
+    let mut store = KvStore::open(current_dir()?)?;
+
     match opts.command {
         Command::Get(get) => {
-            eprintln!("unimplemented");
-            exit(1);
+            let value = store.get(get.key)?;
+            match value {
+                Some(value) => {
+                    println!("{}", value)
+                },
+                None => {
+                    println!("Key not found")
+                }
+            }
         }
         Command::Set(set) => {
-            eprintln!("unimplemented");
-            exit(1);
+            store.set(set.key, set.value)?
         }
         Command::Rm(rm) => {
-            eprintln!("unimplemented");
-            exit(1);
+            match store.remove(rm.key) {
+                Ok(()) => {},
+                Err(KvsError::KeyNotFound) => {
+                    println!("Key not found");
+                    exit(1);
+                },
+                Err(e) => return Err(e),
+            }
         }
     }
+    Ok(())
 }

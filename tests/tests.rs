@@ -5,6 +5,8 @@ use predicates::str::{contains, is_empty, PredicateStrExt};
 use std::process::Command;
 use tempfile::TempDir;
 use walkdir::WalkDir;
+use std::env::current_dir;
+use std::path::PathBuf;
 
 // `kvs` with no args should exit with a non-zero code.
 #[test]
