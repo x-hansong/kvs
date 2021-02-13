@@ -1,7 +1,6 @@
 use std::process::exit;
 
 use clap::Clap;
-use std::path::PathBuf;
 use std::env::current_dir;
 use kvs::{Result, KvsError, KvStore};
 

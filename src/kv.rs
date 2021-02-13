@@ -9,7 +9,6 @@ use serde_json::Deserializer;
 
 /// The `KvStore` stores string key/value pairs.
 pub struct KvStore {
-    path: PathBuf,
     reader: BufReaderWithPos<File>,
     writer: BufWriterWithPos<File>,
     index: HashMap<String, CommandPos>,
@@ -20,9 +19,9 @@ impl KvStore {
     pub fn open(path: impl Into<PathBuf>) -> Result<KvStore> {
         let path = path.into();
         fs::create_dir_all(&path)?;
-        let mut path = path.join("log.text");
+        let path = path.join("log.text");
 
-        let mut writer = BufWriterWithPos::new(OpenOptions::new()
+        let writer = BufWriterWithPos::new(OpenOptions::new()
             .create(true)
             .write(true)
             .append(true)
@@ -34,7 +33,6 @@ impl KvStore {
         let mut index = HashMap::<String, CommandPos>::new();
         load(&mut reader, &mut index)?;
         Ok(KvStore {
-            path,
             reader,
             writer,
             index,
@@ -47,7 +45,7 @@ impl KvStore {
     pub fn set(&mut self, key: String, value: String) -> Result<()> {
         let cmd = Command::set(key, value);
         let pos = self.writer.pos;
-        serde_json::to_writer(&mut self.writer, &cmd);
+        serde_json::to_writer(&mut self.writer, &cmd)?;
         self.writer.flush()?;
         if let Command::Set { key, .. } = cmd {
             let cmd_pos = CommandPos { pos, len: self.writer.pos - pos };
@@ -79,8 +77,7 @@ impl KvStore {
     pub fn remove(&mut self, key: String) -> Result<()> {
         if self.index.contains_key(&key) {
             let cmd = Command::remove(key);
-            let pos = self.writer.pos;
-            serde_json::to_writer(&mut self.writer, &cmd);
+            serde_json::to_writer(&mut self.writer, &cmd)?;
             self.writer.flush()?;
             if let Command::Remove { key } = cmd {
                 self.index.remove(&key).expect("key not found");
